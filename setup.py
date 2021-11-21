@@ -7,7 +7,7 @@ Created on Fri Jul 31 16:55:14 2020
 import setuptools
 
 setuptools.setup(
-    name='base',
+    name='xfdlfw',
     version='0.0.1',
     author='Chonghua Xue',
     author_email='cxue2@bu.edu',
