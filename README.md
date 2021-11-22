@@ -1,4 +1,4 @@
-# multi-GPU
+# Multi-GPU
 
 Multi-GPU deep learning coding framework based on PyTorch.
 
