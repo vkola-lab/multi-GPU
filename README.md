@@ -1,6 +1,6 @@
 # multi-GPU
 
-Multi-GPU Deep learning coding framework based on PyTorch.
+Multi-GPU deep learning coding framework based on PyTorch.
 
 To install
 ```
