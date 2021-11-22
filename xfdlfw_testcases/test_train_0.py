@@ -15,8 +15,8 @@ Created on Thu Sep 23 10:44:54 2021
 
 import torch
 import numpy as np
-from base import Model
-from base.metric import CrossEntropy, Accuracy
+from xfdlfw import Model
+from xfdlfw.metric import CrossEntropy, Accuracy
 
 class BasicConv3d(torch.nn.Module):
     
@@ -61,8 +61,8 @@ class _Dataset(torch.utils.data.Dataset):
 
 if __name__ == '__main__': 
     
-    dst_trn = _Dataset(2**12)
-    dst_vld = _Dataset(2**11)
+    dst_trn = _Dataset(129)
+    dst_vld = _Dataset(65)
 
     # dst_trn = _Dataset(128)
     # dst_vld = _Dataset(129)
@@ -74,7 +74,7 @@ if __name__ == '__main__':
     # training parameters
     kwargs_ldr_trn = {
         'dataset': dst_trn,
-        'batch_size': 22,
+        'batch_size': 4,
         'shuffle': True,
         'num_workers': 0,
         #'seed': 3227
@@ -82,7 +82,7 @@ if __name__ == '__main__':
     
     kwargs_ldr_vld = {
         'dataset': dst_vld,
-        'batch_size': 16,
+        'batch_size': 4,
         'shuffle': False,
         'num_workers': 0
     }
@@ -102,7 +102,7 @@ if __name__ == '__main__':
         torch.optim.Adam(net.parameters()),
     ]
 
-    devices = [0, 1, 2]
+    devices = [0, 1, 2, 3]
     
     # train model
     mdl.fit(

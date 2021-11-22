@@ -24,12 +24,16 @@ class ConfusionMatrix(Metric):
         n_cls = self.kwargs['n_classes']
         cnf = torch.zeros(n_cls, n_cls, dtype=torch.int64, device=output.device)
 
-        # get predicted ys
-        y_pred = torch.argmax(output, -1)
+        # if output and y_true are empty, return a confusion matrix of all zeros
+        if output.nelement() == 0: pass
 
-        # compute confusion matrix
-        _ = torch.ones(len(output), dtype=torch.int64, device=output.device)
-        cnf.index_put_((y_true, y_pred), _, accumulate=True)
+        else:
+            # get predicted ys
+            y_pred = torch.argmax(output, -1)
+
+            # compute confusion matrix
+            _ = torch.ones(len(output), dtype=torch.int64, device=output.device)
+            cnf.index_put_((y_true, y_pred), _, accumulate=True)
 
         return {'cnf': cnf}
 

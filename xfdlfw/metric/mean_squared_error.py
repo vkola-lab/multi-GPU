@@ -20,8 +20,15 @@ class MeanSquaredError(_Metric_01):
     @_detach
     def calc_meta(self, output, y_true):
 
-        n = torch.tensor(len(y_true), dtype=torch.int64, device=output.device)
-        avg = torch.nn.functional.mse_loss(output, y_true).to(torch.float64)
+        # if output and y_true are empty
+        if output.nelement() == 0:
+            n = torch.tensor(0, dtype=torch.int64, device=output.device)
+            avg = torch.tensor(0, dtype=torch.float64, device=output.device)
+
+        # if ouput and y_true are non-empty
+        else:
+            n = torch.tensor(len(y_true), dtype=torch.int64, device=output.device)
+            avg = torch.nn.functional.mse_loss(output, y_true).to(torch.float64)
 
         return {'avg': avg, 'n': n}
 

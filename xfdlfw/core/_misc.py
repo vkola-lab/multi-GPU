@@ -15,18 +15,24 @@ def _routine_post_batch(
     syn, rsl_batch, rsl_epoch, uniq_ids, pbr, metrics_disp
 ):
 
-    # remove index duplication which is caused by distributed sampler
+    # remove index duplication caused by distributed sampler
     if is_distributed:
-        # check sample index duplications
-        msk = torch.tensor(uniq_ids(ids), dtype=torch.bool, device=device)
-
-        # sync indices and update unique_ids object
+        # sync indices
         lst_ids = syn.all_gather_single_tensor(ids.to(device))
-        for _ids in lst_ids:
-            # push to uniq_ids obj
-            uniq_ids(_ids)
+        
+        '''
+        Each process maintains a set of unique sample indices independently, but all
+        sets are supposed to be identical using the broadcasting after each batch. 
+        '''
+        for rank_, ids_ in enumerate(lst_ids):
+            if rank == rank_:
+                # record index uniqueness mask for the local rank
+                msk = torch.tensor(uniq_ids(ids_), dtype=torch.bool, device=device)
 
-        # sync the masks of index uniqueness
+            else:
+                uniq_ids(ids_)
+
+        # sync index uniqueness masks
         lst_msk = syn.all_gather_single_tensor(msk)
         n_uniq_ids = sum([torch.sum(_msk) for _msk in lst_msk])
 
