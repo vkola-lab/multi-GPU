@@ -13,10 +13,6 @@ import torch
 
 class F1(_Metric_00):
 
-    def __init__(self):
-
-        super().__init__()
-
     def from_meta(self, hmp):
 
         _, fp, fn, tp = torch.ravel(hmp['cnf'])
@@ -27,8 +23,3 @@ class F1(_Metric_00):
 
     @_fn_tpl_compare(1)
     def compare(self, val_0, val_1): pass
-
-    @property
-    def abbr(self):
-
-        return 'f1s'

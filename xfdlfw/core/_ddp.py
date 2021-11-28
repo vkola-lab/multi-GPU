@@ -66,7 +66,6 @@ class _Synchronizer:
         rtn = []
 
         for r in range(self.world_size):
-
             rtn.append(self._retract(self._traverse(dat), rank=r))
 
         return rtn

@@ -13,10 +13,6 @@ import torch
 
 class CrossEntropy(_Metric_01):
 
-    def __init__(self):
-
-        super().__init__()
-
     @_detach
     def calc_meta(self, output, y_true):
 
@@ -34,8 +30,3 @@ class CrossEntropy(_Metric_01):
 
     @_fn_tpl_compare(-1)
     def compare(self, val_0, val_1): pass
-
-    @property
-    def abbr(self):
-
-        return 'ce_'

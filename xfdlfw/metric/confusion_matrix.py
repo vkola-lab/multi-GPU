@@ -13,9 +13,9 @@ import torch
 
 class ConfusionMatrix(Metric):
 
-    def __init__(self, n_classes):
+    def __init__(self, name, n_classes):
 
-        super().__init__(n_classes=n_classes)
+        super().__init__(name, n_classes=n_classes)
 
     @_detach
     def calc_meta(self, output, y_true):
@@ -44,8 +44,3 @@ class ConfusionMatrix(Metric):
     def join_meta(self, hmp_0, hmp_1):
 
         return {'cnf': hmp_0['cnf'] + hmp_1['cnf']}
-
-    @property
-    def abbr(self):
-
-        return 'cnf'

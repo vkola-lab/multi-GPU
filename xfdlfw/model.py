@@ -19,7 +19,8 @@ class Model:
         self, kwargs_ldr_trn, losses, optimizers, devices=('cpu',), 
         n_epochs=None, kwargs_ldr_vld=None, save_mode=0, save_dir=None,
         metrics_disp=[], metrics_crit=[],
-        batch_fn_trn=None, batch_fn_vld=None
+        batch_fn_trn=None, batch_fn_vld=None,
+        tensorboard_fn=None
     ):
         ''' 
         The interface of training routine.
@@ -69,6 +70,8 @@ class Model:
             List of strings signifying the performance metrics for model
             selection criterions. The default is [].
         '''
+
+        # kill $(ps aux | grep cxue2 | grep multiprocessing.spawn | grep -v grep | awk '{print $2}')
 
         kwargs = locals()
         kwargs.pop('self')

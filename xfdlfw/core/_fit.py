@@ -19,6 +19,7 @@ from ._misc import _routine_post_epoch
 from ..result import Result
 from ..vision import ProgressBar
 from itertools import count
+from torch.utils.tensorboard import SummaryWriter
 
 
 def _pipeline(
@@ -26,7 +27,8 @@ def _pipeline(
     kwargs_ldr_trn, losses, optimizers, devices,
     n_epochs, kwargs_ldr_vld, save_mode, save_dir,
     metrics_disp, metrics_crit,
-    batch_fn_trn, batch_fn_vld
+    batch_fn_trn, batch_fn_vld,
+    tensorboard_fn
 ):
 
     _input_check(**locals())
@@ -38,10 +40,14 @@ def _pipeline(
 
     # initialize process group
     if is_distributed: _init_process_group(rank, world_size)
+    torch.cuda.set_device(device)
 
     # prepare batch routine function
     if batch_fn_trn is None: batch_fn_trn =      _batch_fn_default
     if batch_fn_vld is None: batch_fn_vld = _evl._batch_fn_default
+
+    # tensorboard writer for visualization
+    tb_writer = None if tensorboard_fn is None or rank != 0 else SummaryWriter()
     
     # prepare net
     net.to(device)
@@ -87,9 +93,12 @@ def _pipeline(
                 rank, is_distributed, device, output, y_true, data[-1],
                 syn, rsl_batch, rsl_epoch, uniq_ids, pbr, metrics_disp)
 
+        # tensorboard
+        if tb_writer is not None: tensorboard_fn(tb_writer, 'trn', device, net, ldr_trn, rsl_epoch, epoch)
+
         # reset epoch result holder and uniq_ids
         if rank == 0: rsl_epoch.reset()
-        uniq_ids.reset()
+        if is_distributed: uniq_ids.reset()
 
         # validate or not?
         if ldr_vld is None: continue
@@ -113,9 +122,12 @@ def _pipeline(
         # validation performance compare, model save
         _routine_post_epoch(rank, is_distributed, net, rsl_epoch, rsl_epoch_best, epoch, metrics_crit, save_mode, save_dir)
 
+        # tensorboard
+        if tb_writer is not None: tensorboard_fn(tb_writer, 'vld', device, net, ldr_trn, rsl_epoch, epoch)
+
         # reset epoch result holder
         if rank == 0: rsl_epoch.reset()
-        uniq_ids.reset()
+        if is_distributed: uniq_ids.reset()
 
     # send model back to the main process
     if is_distributed and rank == 0: queue.put(net.module.cpu().state_dict())

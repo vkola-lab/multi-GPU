@@ -12,22 +12,19 @@ class Result:
     
     def __init__(self, metrics):
 
-        # get metric ids
-        ids = [_._id for _ in metrics]
-
         # register metrics
         self._hmp = {}
-
-        for i, id_ in enumerate(ids):
-            self._hmp[id_] = [metrics[i], None]
+        for met_obj in metrics:
+            if met_obj.name not in self._hmp:
+                self._hmp[met_obj.name] = [met_obj, None]
 
 
     @classmethod
     def with_push(cls, metrics, output, y_true):
 
-        obj = cls(metrics)
-        obj.push(output, y_true)
-        return obj
+        rsl_obj = cls(metrics)
+        rsl_obj.push(output, y_true)
+        return rsl_obj
     
     
     def push(self, output, y_true):
@@ -42,8 +39,8 @@ class Result:
 
     def push_meta(self, hmp):
 
-        for id_ in hmp:
-            p, meta = self._hmp[id_], hmp[id_]
+        for name in hmp:
+            p, meta = self._hmp[name], hmp[name]
             p[1] = meta if p[1] is None else p[0].join_meta(p[1], meta)
 
 
@@ -53,54 +50,52 @@ class Result:
         for p in self._hmp.values():
             if p[1] is None:
                 return True
-        
         return False
 
 
     def reset(self):
 
-        for id_ in self._hmp:
-            self._hmp[id_][1] = None
+        for p in self._hmp.values():
+            p[1] = None
   
     
-    def summary(self, metrics=None, _key='abbr', _val='value', _tuple=False):
-
-        # assert _key in ('_id', 'abbr')
-        # assert _val in ('meta', 'value')
+    def summary(self, metrics=None, _val='value'):
 
         if metrics is None:
             metrics = [p[0] for p in self._hmp.values()]
 
-        # key list
-        lst_k = [getattr(_, _key) for _ in metrics]
+        # metric name list
+        lst_k = [met_obj.name for met_obj in metrics]
 
         # val list
-        lst_v = []
+        rtn = dict()
+        for name in lst_k:
+            if self._hmp[name][1] is None:
+                rtn[name] = None
 
-        for _id in [m._id for m in metrics]:
-            if _val == 'value':
-                lst_v.append(self._hmp[_id][0].from_meta(self._hmp[_id][1]))
+            elif _val == 'value':
+                rtn[name] = self._hmp[name][0].from_meta(self._hmp[name][1])
 
             elif _val == 'meta':
-                lst_v.append(self._hmp[_id][1])
+                rtn[name] = self._hmp[name][1]
 
-        return tuple(zip(lst_k, lst_v)) if _tuple else dict(zip(lst_k, lst_v))
+        return rtn
 
     
     def is_better_than(self, tar, metrics):
 
         # calculate metrics
-        hmp_0 = self.summary(metrics, _key='_id')
-        hmp_1 =  tar.summary(metrics, _key='_id')
+        hmp_0 = self.summary(metrics)
+        hmp_1 =  tar.summary(metrics)
 
-        for id_ in hmp_0:
+        for name in hmp_0:
             # compare
-            rsl = self._hmp[id_][0].compare(hmp_0[id_], hmp_1[id_])
+            cmp = self._hmp[name][0].compare(hmp_0[name], hmp_1[name])
             
-            if rsl == 1: 
+            if cmp == 1: 
                 return True
 
-            elif rsl == -1:
+            elif cmp == -1:
                 return False
         
         return False
@@ -110,7 +105,7 @@ class Result:
 
         str_ = ''
 
-        for k, v in self.summary(_tuple=True):
+        for k, v in self.summary():
             str_ += '{}: {}\n'.format(k, v.cpu().numpy())
 
         return str_

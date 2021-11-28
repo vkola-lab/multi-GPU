@@ -7,13 +7,15 @@ Created on Thu Oct 14 14:47:38 2021
 """
 
 from abc import ABC, abstractmethod
-import pickle, hashlib
 
 
 class Metric(ABC):
 
-    def __init__(self, **kwargs):
-
+    def __init__(self, name, idx_output=0, idx_y_true=1, **kwargs):
+        
+        self.name = name
+        self.idx_y_true = idx_y_true
+        self.idx_output = idx_output
         self.kwargs = kwargs
 
     def __call__(self, output, y_true):
@@ -33,15 +35,10 @@ class Metric(ABC):
 
         raise NotImplementedError
 
-    @property
-    def abbr(self):
+    # @property
+    # def name(self):
 
-        return type(self).__name__
-
-    @property
-    def _id(self):
-
-        return hashlib.md5(pickle.dumps(self)).digest()
+    #     return self.name
 
 
 from .confusion_matrix import ConfusionMatrix
@@ -50,10 +47,10 @@ from .confusion_matrix import ConfusionMatrix
 class _Metric_00(Metric):
     ''' Dependent on confusion matrix. ''' 
 
-    def __init__(self, **kwargs):
+    def __init__(self, name, **kwargs):
 
-        super().__init__(**kwargs)
-        self.cnf = ConfusionMatrix(n_classes=2)
+        super().__init__(name, **kwargs)
+        self.cnf = ConfusionMatrix('cnf', n_classes=2)
 
     def calc_meta(self, output, y_true):
 
@@ -67,9 +64,9 @@ class _Metric_00(Metric):
 class _Metric_01(Metric):
     ''' Dependent on average and # of samples. '''
 
-    def __init__(self, **kwargs):
+    def __init__(self, name, **kwargs):
 
-        super().__init__(**kwargs)
+        super().__init__(name, **kwargs)
 
     def from_meta(self, hmp):
 

@@ -41,21 +41,23 @@ def _routine_post_batch(
         rsl_batch.push(output[msk], y_true[msk])
 
         # sync metric meta
-        lst_meta = syn.all_gather(rsl_batch.summary(_key='_id', _val='meta'))
+        lst_meta = syn.all_gather(rsl_batch.summary(_val='meta'))
 
     else:
         # push local outputs to batch result holder
         rsl_batch.push(output, y_true)
 
         # no need to sync
-        lst_meta = [rsl_batch.summary(_key='_id', _val='meta')]
+        lst_meta = [rsl_batch.summary(_val='meta')]
 
     rsl_batch.reset()
 
     # merge batch result to epoch result, then read metrics to show on progress bar
     if rank == 0:
-        for meta in lst_meta: rsl_epoch.push_meta(meta)
-        to_disp = rsl_epoch.summary(metrics_disp, _tuple=True)
+        for meta in lst_meta:
+            rsl_epoch.push_meta(meta)
+            
+        to_disp = rsl_epoch.summary(metrics_disp)
 
         if is_distributed:
             pbr.update(n_uniq_ids.item(), to_disp)
@@ -88,7 +90,7 @@ def _routine_post_epoch(
         if rsl_epoch_best.is_empty() or (not rsl_epoch_best.is_better_than(rsl_epoch, metrics_crit)):
             # replace rsl_epoch_best for the current
             rsl_epoch_best.reset()
-            rsl_epoch_best.push_meta(rsl_epoch.summary(_key='_id', _val='meta'))
+            rsl_epoch_best.push_meta(rsl_epoch.summary(_val='meta'))
 
             # save model
             torch.save(net_.state_dict(), fname)

@@ -29,6 +29,7 @@ def _pipeline(
 
     # initialize process group
     if is_distributed: _init_process_group(rank, world_size)
+    torch.cuda.set_device(device)
 
     # prepare net
     net.to(device)

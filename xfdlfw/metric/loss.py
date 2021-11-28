@@ -28,8 +28,3 @@ class Loss(_Metric_01):
     @_fn_tpl_compare(-1)
     def compare(self, val_0, val_1): pass
 
-    @property
-    def abbr(self):
-
-        return 'los'
-

@@ -8,7 +8,7 @@ import setuptools
 
 setuptools.setup(
     name='xfdlfw',
-    version='0.0.1',
+    version='0.0.3',
     author='Chonghua Xue',
     author_email='cxue2@bu.edu',
     # url='https://github.com/vkola-lab/python_speech_features_cuda',

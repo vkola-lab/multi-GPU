@@ -16,11 +16,11 @@ class ProgressBar(tqdm):
         
         super().__init__(total=total, desc=desc, ascii=True, bar_format='{l_bar}{r_bar}', file=sys.stdout)
     
-    def update(self, batch_size, metrics):
+    def update(self, batch_size, to_disp):
         
         postfix = {}
         
-        for k, v in metrics:
+        for k, v in to_disp.items():
             if k == 'cnf':           
                 postfix[k] = v.__repr__().replace('\n', '')
             
