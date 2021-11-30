@@ -58,11 +58,11 @@ def _pipeline(
     # evaluation routine
     for batch, data in enumerate(ldr):
 
-        output, y_true = batch_fn(data[:-1], net, device)
+        batch_fn_returns = batch_fn(data[:-1], net, device)
         
         # result push, result sync, progress bar update
         _routine_post_batch(
-            rank, is_distributed, device, output, y_true, data[-1],
+            rank, is_distributed, device, batch_fn_returns, data[-1],
             syn, rsl_batch, rsl_epoch, uniq_ids, pbr, metrics_disp)
 
     # destroy process group

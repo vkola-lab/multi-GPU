@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Thu Oct 14 14:47:38 2021
 
@@ -13,15 +11,21 @@ import torch
 
 class ConfusionMatrix(Metric):
 
-    def __init__(self, name, n_classes):
+    def __init__(self, name, n_classes, idx_output=0, idx_y_true=1):
 
-        super().__init__(name, n_classes=n_classes)
+        super().__init__(name)
+        self.n_classes = n_classes
+        self.idx_output = idx_output
+        self.idx_y_true = idx_y_true
 
     @_detach
-    def calc_meta(self, output, y_true):
+    def calc_meta(self, *operands):
+
+        output = operands[self.idx_output]
+        y_true = operands[self.idx_y_true]
 
         # initialize confusion matrix
-        n_cls = self.kwargs['n_classes']
+        n_cls = self.n_classes
         cnf = torch.zeros(n_cls, n_cls, dtype=torch.int64, device=output.device)
 
         # if output and y_true are empty, return a confusion matrix of all zeros

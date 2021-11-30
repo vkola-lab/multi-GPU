@@ -47,7 +47,7 @@ def _pipeline(
     if batch_fn_vld is None: batch_fn_vld = _evl._batch_fn_default
 
     # tensorboard writer for visualization
-    tb_writer = None if tensorboard_fn is None or rank != 0 else SummaryWriter()
+    tb_writer = None if (tensorboard_fn is None) or (rank != 0) else SummaryWriter()
     
     # prepare net
     net.to(device)
@@ -74,7 +74,7 @@ def _pipeline(
 
     # epoch loop
     for epoch in range(n_epochs) if n_epochs is not None else count():
-        # set net to train/eval mode
+        # set net to training mode
         torch.set_grad_enabled(True)
         net.train()
 
@@ -86,15 +86,24 @@ def _pipeline(
 
         # mini-batch training loop
         for batch, data in enumerate(ldr_trn):
-            output, y_true = batch_fn_trn(data[:-1], net, device, losses, optimizers, epoch, batch)
+            batch_fn_returns = batch_fn_trn(data[:-1], net, device, losses, optimizers, epoch, batch)
 
             # result push, result sync, index duplication removal, progress bar update
             _routine_post_batch(
-                rank, is_distributed, device, output, y_true, data[-1],
+                rank, is_distributed, device, batch_fn_returns, data[-1],
                 syn, rsl_batch, rsl_epoch, uniq_ids, pbr, metrics_disp)
 
+        # set net to evaluation mode for tensorboard visualization and validation
+        torch.set_grad_enabled(False)
+        net.eval()
+
         # tensorboard
-        if tb_writer is not None: tensorboard_fn(tb_writer, 'trn', device, net, ldr_trn, rsl_epoch, epoch)
+        if tb_writer is not None:
+            tensorboard_fn(
+                tb_writer, 'trn', device, 
+                net.module if is_distributed else net, 
+                ldr_trn, rsl_epoch, epoch
+            )
 
         # reset epoch result holder and uniq_ids
         if rank == 0: rsl_epoch.reset()
@@ -103,27 +112,29 @@ def _pipeline(
         # validate or not?
         if ldr_vld is None: continue
 
-        # set net to evaluation mode
-        torch.set_grad_enabled(False)
-        net.eval()
-
         # create progress bar
         pbr = ProgressBar(len(ldr_vld.dataset), 'Epoch --- (EVL)') if rank == 0 else None
 
         # validation
         for batch, data in enumerate(ldr_vld):
-            output, y_true = batch_fn_vld(data[:-1], net, device)
+            batch_fn_returns = batch_fn_vld(data[:-1], net, device)
 
             # result push, result sync, progress bar update
             _routine_post_batch(
-                rank, is_distributed, device, output, y_true, data[-1],
-                syn, rsl_batch, rsl_epoch, uniq_ids, pbr, metrics_disp)
+                rank, is_distributed, device, batch_fn_returns, data[-1],
+                syn, rsl_batch, rsl_epoch, uniq_ids, pbr, metrics_disp
+            )
 
         # validation performance compare, model save
         _routine_post_epoch(rank, is_distributed, net, rsl_epoch, rsl_epoch_best, epoch, metrics_crit, save_mode, save_dir)
 
         # tensorboard
-        if tb_writer is not None: tensorboard_fn(tb_writer, 'vld', device, net, ldr_trn, rsl_epoch, epoch)
+        if tb_writer is not None:
+            tensorboard_fn(
+                tb_writer, 'vld', device, 
+                net.module if is_distributed else net, 
+                ldr_vld, rsl_epoch, epoch
+            )
 
         # reset epoch result holder
         if rank == 0: rsl_epoch.reset()
@@ -169,11 +180,11 @@ def _batch_fn_default(data, net, device, losses, optimizers, epoch, batch):
     
 def _input_check(**kwargs):
 
-    if len(kwargs['losses']) > 1:
+    if len(kwargs['losses']) > 1 and (kwargs['batch_fn_trn'] is None or kwargs['batch_fn_vld'] is None):
 
         raise RuntimeError('Default batch training routine cannot handle multiple losses.')
 
-    if len(kwargs['optimizers']) > 1:
+    if len(kwargs['optimizers']) > 1 and (kwargs['batch_fn_trn'] is None or kwargs['batch_fn_vld'] is None):
 
         raise RuntimeError('Default batch training routine cannot handle multiple optimizers.')
 

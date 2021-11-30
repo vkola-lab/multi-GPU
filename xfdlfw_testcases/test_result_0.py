@@ -8,7 +8,7 @@ Created on Thu Oct 14 14:47:38 2021
 
 import torch
 from xfdlfw import Result
-from xfdlfw.metric import Loss, ConfusionMatrix, Accuracy, MeanSquaredError, MeanAbsoluteError, CrossEntropy
+from xfdlfw.metric import ConfusionMatrix, Accuracy, MeanSquaredError, MeanAbsoluteError, CrossEntropy
 
 acc = Accuracy('acc')
 ce_ = CrossEntropy('ce_')

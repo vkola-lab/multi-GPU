@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Thu Oct 14 14:47:38 2021
 
@@ -36,15 +34,15 @@ def _detach(fnc):
     @functools.wraps(fnc)
     def main(*args, **kwargs):
 
-        # parse inputs
-        kwargs_ = _parse_inputs(fnc, args, kwargs)
+        # make the inputs mutable
+        args_ = list(args)
 
         # detach output and y_true
-        for k in ['output', 'y_true']:
-            
-            kwargs_[k] = kwargs_[k].detach()
+        for i in range(len(args_)):
+            if isinstance(args_[i], torch.Tensor):
+                args_[i] = args_[i].detach()
 
-        return fnc(**kwargs_)
+        return fnc(*args_, **kwargs)
     
     return main
 

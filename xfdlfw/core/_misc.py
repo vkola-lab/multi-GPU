@@ -11,41 +11,56 @@ from datetime import datetime
 
 
 def _routine_post_batch(
-    rank, is_distributed, device, output, y_true, ids,
+    rank, is_distributed, device, batch_fn_returns, ids,
     syn, rsl_batch, rsl_epoch, uniq_ids, pbr, metrics_disp
 ):
 
-    # remove index duplication caused by distributed sampler
+    # manage indices
     if is_distributed:
-        # sync indices
-        lst_ids = syn.all_gather_single_tensor(ids.to(device))
-        
         '''
         Each process maintains a set of unique sample indices independently, but all
-        sets are supposed to be identical using the broadcasting after each batch. 
+        sets are supposed to be identical using broadcasting after each batch. 
         '''
+        lst_ids = syn.all_gather_single_tensor(ids.to(device))
+        lst_msk = []
+        
+        # record index uniqueness mask for all ranks
         for rank_, ids_ in enumerate(lst_ids):
             if rank == rank_:
-                # record index uniqueness mask for the local rank
-                msk = torch.tensor(uniq_ids(ids_), dtype=torch.bool, device=device)
+                # index uniqueness mask for local rank
+                msk = uniq_ids(ids_)
+                lst_msk.append(msk)
 
             else:
-                uniq_ids(ids_)
+                lst_msk.append(uniq_ids(ids_))
 
-        # sync index uniqueness masks
-        lst_msk = syn.all_gather_single_tensor(msk)
-        n_uniq_ids = sum([torch.sum(_msk) for _msk in lst_msk])
+        # the num. of unique indice equals the num. of Trues in lst_msk
+        n_uniq_ids = sum([sum(msk_) for msk_ in lst_msk])
 
+    else:
+        '''
+        The default sampler for non-distributed run is assumed to yield unique indice.
+        '''
+        n_uniq_ids = len(ids)
+
+    # manage results
     if is_distributed:
-        # push local outputs (duplication removed) to batch result holder
-        rsl_batch.push(output[msk], y_true[msk])
+
+        # apply mask to remove duplications
+        batch_fn_returns = list(batch_fn_returns)
+        for i, obj in enumerate(batch_fn_returns):
+            if isinstance(obj, torch.Tensor) and len(obj) == len(msk):
+                batch_fn_returns[i] = obj[msk]
+
+        # push local outputs (duplications removed) to batch result holder
+        rsl_batch.push(*batch_fn_returns)
 
         # sync metric meta
         lst_meta = syn.all_gather(rsl_batch.summary(_val='meta'))
 
     else:
         # push local outputs to batch result holder
-        rsl_batch.push(output, y_true)
+        rsl_batch.push(*batch_fn_returns)
 
         # no need to sync
         lst_meta = [rsl_batch.summary(_val='meta')]
@@ -58,12 +73,7 @@ def _routine_post_batch(
             rsl_epoch.push_meta(meta)
             
         to_disp = rsl_epoch.summary(metrics_disp)
-
-        if is_distributed:
-            pbr.update(n_uniq_ids.item(), to_disp)
-
-        else:
-            pbr.update(len(output), to_disp)
+        pbr.update(n_uniq_ids, to_disp)
 
 
 def _routine_post_epoch(

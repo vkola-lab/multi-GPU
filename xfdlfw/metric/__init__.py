@@ -20,9 +20,6 @@ from .cross_entropy import CrossEntropy
 from .mean_absolute_error import MeanAbsoluteError
 from .mean_squared_error import MeanSquaredError
 
-# loss metric
-from .loss import Loss
-
 # remove
 from ._misc import _detach
 del _misc
@@ -39,5 +36,3 @@ del cross_entropy
 
 del mean_absolute_error
 del mean_squared_error
-
-del loss

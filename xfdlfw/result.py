@@ -20,18 +20,19 @@ class Result:
 
 
     @classmethod
-    def with_push(cls, metrics, output, y_true):
+    def with_push(cls, metrics, *operands):
 
         rsl_obj = cls(metrics)
-        rsl_obj.push(output, y_true)
+        rsl_obj.push(*operands)
         return rsl_obj
     
     
-    def push(self, output, y_true):
+    def push(self, *operands):
         
         for p in self._hmp.values():
+
             # calcualte meta
-            meta = p[0].calc_meta(output, y_true)
+            meta = p[0].calc_meta(*operands)
 
             # join meta
             p[1] = meta if p[1] is None else p[0].join_meta(p[1], meta)
