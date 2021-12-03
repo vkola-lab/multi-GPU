@@ -9,3 +9,4 @@ from . import metric
 from .model import Model
 from .result import Result
 from . import core
+from . import nn

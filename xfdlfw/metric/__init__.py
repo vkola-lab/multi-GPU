@@ -20,6 +20,8 @@ from .cross_entropy import CrossEntropy
 from .mean_absolute_error import MeanAbsoluteError
 from .mean_squared_error import MeanSquaredError
 
+from .loss import Loss
+
 # remove
 from ._misc import _detach
 del _misc
