@@ -180,24 +180,20 @@ def _batch_fn_default(data, net, device, losses, optimizers, epoch, batch):
     
 def _input_check(**kwargs):
 
-    if len(kwargs['losses']) > 1 and (kwargs['batch_fn_trn'] is None or kwargs['batch_fn_vld'] is None):
+    if len(kwargs['losses']) > 1 or len(kwargs['optimizers']) > 1:
+        if kwargs['batch_fn_trn'] is None:
+            raise RuntimeError('Default batch training routine cannot handle multiple losses or multiple optimizers.')
 
-        raise RuntimeError('Default batch training routine cannot handle multiple losses.')
-
-    if len(kwargs['optimizers']) > 1 and (kwargs['batch_fn_trn'] is None or kwargs['batch_fn_vld'] is None):
-
-        raise RuntimeError('Default batch training routine cannot handle multiple optimizers.')
+        elif kwargs['batch_fn_vld'] is None and kwargs['kwargs_ldr_vld'] is not None:
+            raise RuntimeError('Default batch validation routine cannot handle multiple losses or multiple optimizers.')
 
     if kwargs['save_mode'] not in [0, 1, 2]:
-        
         raise RuntimeError('\"{}\" is not a valid <save_mode>.'.format(kwargs['save_mode']))
         
-    if kwargs['save_mode'] == 1 and kwargs['save_dir'] is None:
-        
+    if kwargs['save_mode'] == 1 and kwargs['save_dir'] is None: 
         raise RuntimeError('If <save_mode> == 1, <save_dir> must be specified.')
         
     if kwargs['save_mode'] == 2 and (kwargs['kwargs_ldr_vld'] is None or 
                                      kwargs['save_dir'] is None or 
-                                     kwargs['metrics_crit'] is None):
-        
+                                     kwargs['metrics_crit'] is None): 
         raise RuntimeError('If <save_mode> is 2, <save_dir>, <kwargs_ldr_vld> and <metrics_crit> must be specified.')
